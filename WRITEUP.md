@@ -4,6 +4,14 @@ Notes and measurements on running php2shell (CVE-2026-109618 / CVE-2026-109619)
 against PHP that sits behind nginx, plus a reliable app-level chain for the cases
 where the memory-corruption chain cannot be delivered.
 
+**Should you care?** If your PHP is patched and restarted, nothing here applies.
+If it is unpatched, the deciding factors are `post_max_size` relative to
+`memory_limit`, and `max_input_vars`: with nginx in front and a small
+`post_max_size` (PHP's own 8M default) the memory-corruption chain cannot be
+delivered at all, and a high `memory_limit` keeps it that way. The chain that does
+survive a proxy — app-LFI — needs an `include` sink. See §6 for the short list of
+settings that decide it.
+
 Short version:
 
 * nginx **dechunks every request**, even with `proxy_request_buffering off`. PHP
