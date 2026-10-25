@@ -1,0 +1,30 @@
+# Suricata: php2shell (CVE-2026-109618) request shape.
+#
+# The parser only reaches the vulnerable cleanup path when the body is large
+# enough to exhaust memory_limit, so the rules key on body size plus the
+# upload-progress carrier. Tune dsize to the target's memory_limit/post_max_size.
+alert http any any -> any any (msg:"php2shell CVE-2026-109618 upload-progress OOM attempt"; \
+  flow:to_server,established; http.method; content:"POST"; \
+  http.content_type; content:"multipart/form-data"; nocase; \
+  http.request_body; content:"PHP_SESSION_UPLOAD_PROGRESS"; \
+  dsize:>6000000; \
+  metadata: cve CVE-2026-109618, cve CVE-2026-109619; \
+  classtype:web-application-attack; sid:2026109618; rev:1;)
+
+# Same shape plus a session id forced from the attacker (cookie or form field),
+# i.e. the session-poisoning variant rather than a bare DoS probe.
+alert http any any -> any any (msg:"php2shell session poison via upload-progress"; \
+  flow:to_server,established; http.method; content:"POST"; \
+  http.content_type; content:"multipart/form-data"; nocase; \
+  http.request_body; content:"PHP_SESSION_UPLOAD_PROGRESS"; \
+  http.cookie; content:"PHPSESSID="; \
+  dsize:>6000000; \
+  classtype:web-application-attack; sid:2026109619; rev:1;)
+
+# Eyes-on signal: 500 on a request that carried a progression upload. Pair with
+# the server log line "Allowed memory size of N bytes exhausted ... in Unknown
+# on line 0" (startup phase) to confirm it was parsing that died.
+alert http any any -> any any (msg:"php2shell startup 500 after upload-progress POST"; \
+  flow:to_client,established; http.stat_code; content:"500"; \
+  http.content_type; content:"text/html"; \
+  classtype:web-application-attack; sid:2026109620; rev:1;)
