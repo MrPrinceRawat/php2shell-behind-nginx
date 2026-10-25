@@ -22,6 +22,7 @@ Summary of the results:
 
 ```
 WRITEUP.md          the write-up: measurements, mitigations, detection, open problem
+FINDINGS.md         lab notebook: raw runs, the vuln-vs-patched table, the dead ends
 lab/                mod_php target, stock and tightened profiles, patched control
 lab-fpm/            same build behind nginx + PHP-FPM
 lab-proxy/          nginx -> mod_php, buffering on/off
